@@ -90,3 +90,5 @@ func TestGetConsumptionWeekly(t *testing.T) {
 		t.Errorf("Expected 2, got %d", len(consumptions))
 	}
 }
+
+// Mock del repositorio
