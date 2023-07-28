@@ -5,6 +5,7 @@ import (
 	"github.com/cantillo16/bia_energy/src/models"
 	"github.com/cantillo16/bia_energy/src/services"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -28,12 +29,64 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		meterIDs, startDate, endDate, kindPeriod := parseRequestParams(r)
 		var period []string
-		var dataGraph []models.Consumption
+		var dataGraphGroup []ConsumptionGroup
 
+		dataGraph, _ := service.GetConsumption(meterIDs, startDate, endDate)
+
+		// Creamos una función para agrupar los datos por el tipo de periodo (monthly, weekly, daily)
+		groupFunc := func(consumption models.Consumption) string {
+			switch kindPeriod {
+			case "monthly":
+				return consumption.Date.Format("Jan 2006")
+			case "weekly":
+				return consumption.Date.Format("Jan 2 2006")
+			case "daily":
+				return consumption.Date.Format("02 Jan 2006")
+			default:
+				return ""
+			}
+		}
+
+		// Creamos un mapa para agrupar los datos
+		groupMap := make(map[string]*ConsumptionGroup)
+
+		for _, consumption := range dataGraph {
+			groupKey := groupFunc(consumption)
+			if groupKey == "" {
+				http.Error(w, "El parámetro kind_period no es válido", http.StatusBadRequest)
+				return
+			}
+
+			group, ok := groupMap[groupKey]
+			if !ok {
+				groupMap[groupKey] = &ConsumptionGroup{
+					MeterID:        consumption.MeterID,
+					ActiveEnergy:   []float64{consumption.ActiveEnergy},
+					ReactiveEnergy: []float64{consumption.ReactiveEnergy},
+					Solar:          []float64{consumption.Solar},
+					Date:           []string{consumption.Date.Format("2006-01-02")},
+				}
+			} else {
+				group.ActiveEnergy = append(group.ActiveEnergy, consumption.ActiveEnergy)
+				group.ReactiveEnergy = append(group.ReactiveEnergy, consumption.ReactiveEnergy)
+				group.Solar = append(group.Solar, consumption.Solar)
+				group.Date = append(group.Date, consumption.Date.Format("2006-01-02"))
+			}
+		}
+
+		// Obtenemos la lista final de ConsumptionGroup y formateamos el periodo
+		for _, group := range groupMap {
+			dataGraphGroup = append(dataGraphGroup, *group)
+		}
+
+		// Ordenamos los datos por fecha antes de generar el periodo
+		sort.SliceStable(dataGraphGroup, func(i, j int) bool {
+			return dataGraphGroup[i].Date[0] < dataGraphGroup[j].Date[0]
+		})
+
+		// Generamos el periodo según el tipo de periodo seleccionado
 		switch kindPeriod {
 		case "monthly":
-			dataGraph, _ = service.GetConsumption(meterIDs, startDate, endDate)
-
 			if startDate.Day() == 1 {
 				period = append(period, startDate.Format("Jan 2006"))
 			}
@@ -54,22 +107,26 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 				startDate = weekEndDate.AddDate(0, 0, 1)
 			}
 		case "daily":
-			dataGraph, _ = service.GetConsumption(meterIDs, startDate, endDate)
-			for i := 0; i < int(endDate.Sub(startDate).Hours()/24)+1; i++ {
-				period = append(period, startDate.AddDate(0, 0, i).Format("Jan 2"))
+			if startDate.Hour() == 0 {
+				period = append(period, startDate.Format("02 Jan 2006"))
 			}
-
+			for startDate.Before(endDate) {
+				startDate = startDate.AddDate(0, 0, 1)
+				if startDate.Hour() == 0 && startDate.Before(endDate) {
+					period = append(period, startDate.Format("02 Jan 2006"))
+				}
+			}
 		default:
 			http.Error(w, "El parámetro kind_period no es válido", http.StatusBadRequest)
 			return
 		}
 
 		response := struct {
-			Period    []string             `json:"period"`
-			DataGraph []models.Consumption `json:"data_graph"`
+			Period    []string           `json:"period"`
+			DataGraph []ConsumptionGroup `json:"data_graph"`
 		}{
 			Period:    period,
-			DataGraph: dataGraph,
+			DataGraph: dataGraphGroup,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
