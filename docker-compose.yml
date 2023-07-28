@@ -1,0 +1,15 @@
+version: "3.7"
+services:
+  bia_energy_backend:
+    platform: linux/amd64
+    container_name: bia_energy_backend
+    build:
+      context: ./.dockers/mysql
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bia_energy
+    ports:
+        - "3320:3306"
+    volumes:
+      - ./.dockers/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql

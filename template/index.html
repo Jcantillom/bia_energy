@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bia Energy</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body>
+<header class="bg-white py-4 px-8">
+    <div class="container mx-auto">
+        <img src="https://yt3.googleusercontent.com/9LW5YhQ5E_kCTmemD_zSfB2KAc6vyAvXLMQaziwiUXlMs1Uv62dkYnKP8HxQjb7eG_F6PSWb3w=s900-c-k-c0x00ffffff-no-rj"
+             alt="Bia Energy" class="w-40">
+    </div>
+</header>
+
+<section class="bg-gray-100 py-12 px-8">
+    <div class="container mx-auto">
+        <h1 class="text-3xl font-bold mb-4">Bienvenido a Bia Energy</h1>
+        <p class="text-gray-600">Prueba Backend Presentada por : JUAN CANTILLO</p>
+        <p class="text-gray-600">Bases de Datos Mysql en Docker</p>
+        <p class="text-gray-600">Go 1.20</p>
+        <p class="text-gray-600">GORM</p>
+        <p class="text-gray-600">Gorilla Mux</p>
+        <p class="text-gray-600">GoDotEnv</p>
+        <p class="text-gray-600">UUID</p>
+
+    </div>
+</section>
+<section class="py-12 px-8">
+    <div class="container mx-auto">
+        <!-- Tabla de los últimos 20 registros -->
+        <h2 class="text-2xl font-bold mb-4">Últimos 20 Registros de Consumo</h2>
+        <table class="w-full border border-gray-200">
+            <thead>
+            <tr>
+                <th class="py-2 px-4 bg-gray-100 border-b border-gray-200">Medidor ID</th>
+                <th class="py-2 px-4 bg-gray-100 border-b border-gray-200">Consumo Activo</th>
+                <th class="py-2 px-4 bg-gray-100 border-b border-gray-200">Consumo Reactivo Inductivo</th>
+                <th class="py-2 px-4 bg-gray-100 border-b border-gray-200">Consumo Reactivo Capacitivo</th>
+                <th class="py-2 px-4 bg-gray-100 border-b border-gray-200">Solar</th>
+                <th class="py-2 px-4 bg-gray-100 border-b border-gray-200">Fecha</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Aquí se agregan los datos -->
+            </tbody>
+        </table>
+
+        <!--Información del periodo -->
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold mb-4">Información del Periodo</h2>
+            <p id="periodInfo" class="text-gray-600">Seleccione un periodo para ver la información correspondiente.</p>
+        </div>
+
+        <!-- Filtros de búsqueda -->
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold mb-4">Filtros de Búsqueda</h2>
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="meterId">
+                Medidor ID:
+            </label>
+            <input class="border rounded-lg py-2 px-4 w-full mb-4" id="meterId" type="number"
+                   placeholder="Ingrese el ID del medidor">
+
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="startDate">
+                Fecha de Inicio:
+            </label>
+            <input class="border rounded-lg py-2 px-4 w-full mb-4" id="startDate" type="date">
+
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="endDate">
+                Fecha de Fin:
+            </label>
+            <input class="border rounded-lg py-2 px-4 w-full mb-4" id="endDate" type="date">
+
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="kindPeriod">
+                Tipo de Periodo:
+            </label>
+            <select class="border rounded-lg py-2 px-4 w-full mb-4" id="kindPeriod">
+                <option value="daily">Diario</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensual</option>
+            </select>
+
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    id="searchBtn">
+                Buscar
+            </button>
+        </div>
+    </div>
+</section>
+
+
+<footer class="bg-gray-900 text-white py-4 px-8">
+    <div class="container mx-auto">
+        <p>&copy; 2023 Bia Energy. Cantillo Dev.</p>
+    </div>
+</footer>
+
+<script>
+    // Función para obtener los últimos 20 registros de consumo
+    async function getLatestConsumptions() {
+        try {
+            const response = await fetch('http://127.0.0.1:8080/consumption/latest'); // Reemplaza {{host}} por la URL de tu servidor
+            const data = await response.json();
+
+            // Obtener la tabla
+            const table = document.querySelector('table tbody');
+
+            // Limpiar la tabla
+            table.innerHTML = '';
+
+            // Agregar los datos a la tabla
+            data.forEach(consumption => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td  class="py-2 px-4 border-b border-gray-200 text-center">${consumption.meter_id}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.active_energy}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.reactive_energy}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.capacitive_reactive}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.solar}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.date}</td>
+                `;
+                table.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error al obtener los datos:', error);
+        }
+    }
+
+    // Función para obtener los registros de consumo con los filtros de búsqueda
+    async function getConsumptionsBySearch() {
+        try {
+            const meterId = document.getElementById('meterId').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const kindPeriod = document.getElementById('kindPeriod').value;
+
+            const response = await fetch(`http://127.0.0.1:8080/consumption?meters_ids=${meterId}&start_date=${startDate}&end_date=${endDate}&kind_period=${kindPeriod}`);
+            const data = await response.json();
+
+            // Mostrar la información del periodo seleccionado
+            const periodInfo = document.getElementById('periodInfo');
+            if (kindPeriod === 'daily') {
+                periodInfo.textContent = `Período seleccionado: ${startDate} - ${endDate}`;
+            } else if (kindPeriod === 'weekly') {
+                periodInfo.textContent = `Período seleccionado: ${data.period.join(', ')}`;
+            } else if (kindPeriod === 'monthly') {
+                periodInfo.textContent = `Período seleccionado: ${data.period.join(', ')}`;
+            }
+
+            // Obtener la tabla de consumo
+            const table = document.querySelector('table tbody');
+
+            // Limpiar la tabla
+            table.innerHTML = '';
+
+            // Agregar los datos a la tabla
+            data.data_graph.forEach(consumption => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td  class="py-2 px-4 border-b border-gray-200 text-center">${consumption.meter_id}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.active_energy}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.reactive_energy}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.capacitive_reactive}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.solar}</td>
+                    <td class="py-2 px-4 border-b border-gray-200 text-center">${consumption.date}</td>
+                `;
+                table.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error al obtener los datos:', error);
+        }
+    }
+
+    // Obtener los últimos 20 registros de consumo
+    getLatestConsumptions();
+
+    // Agregar el evento click al botón de búsqueda
+    document.getElementById('searchBtn').addEventListener('click', getConsumptionsBySearch);
+</script>
+
+</body>
+</html>
