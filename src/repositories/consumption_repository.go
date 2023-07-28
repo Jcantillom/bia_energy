@@ -7,9 +7,7 @@ import (
 )
 
 type ConsumptionRepository interface {
-	GetConsumptionMonthly(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
-	GetConsumptionDaily(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
-	GetConsumptionWeekly(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
+	GetConsumption(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
 	GetLastConsumption() ([]models.Consumption, error)
 }
 
@@ -21,29 +19,7 @@ func NewConsumptionRepository(db *gorm.DB) *ConsumptionRepositoryImpl {
 	return &ConsumptionRepositoryImpl{db: db}
 }
 
-func (c *ConsumptionRepositoryImpl) GetConsumptionMonthly(meterIDs []int, startDate, endDate time.Time) (
-	[]models.Consumption, error) {
-	var consumptions []models.Consumption
-	err := c.db.Where("meter_id IN (?) AND date BETWEEN ? AND ?",
-		meterIDs, startDate, endDate).Find(&consumptions).Error
-	if err != nil {
-		return nil, err
-	}
-	return consumptions, nil
-}
-
-func (c *ConsumptionRepositoryImpl) GetConsumptionDaily(meterIDs []int, startDate, endDate time.Time) (
-	[]models.Consumption, error) {
-	var consumptions []models.Consumption
-	err := c.db.Where("meter_id IN (?) AND date BETWEEN ? AND ?",
-		meterIDs, startDate, endDate).Find(&consumptions).Error
-	if err != nil {
-		return nil, err
-	}
-	return consumptions, nil
-}
-
-func (c *ConsumptionRepositoryImpl) GetConsumptionWeekly(meterIDs []int, startDate, endDate time.Time) (
+func (c *ConsumptionRepositoryImpl) GetConsumption(meterIDs []int, startDate, endDate time.Time) (
 	[]models.Consumption, error) {
 	var consumptions []models.Consumption
 	err := c.db.Where("meter_id IN (?) AND date BETWEEN ? AND ?",

@@ -32,21 +32,29 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 
 		switch kindPeriod {
 		case "monthly":
-			dataGraph, _ = service.GetConsumptionMonthly(meterIDs, startDate, endDate)
-			period = append(period, startDate.Format("Jan 2006"))
-			for startDate.Before(endDate) {
-				startDate = startDate.AddDate(0, 1, 0)
+			dataGraph, _ = service.GetConsumption(meterIDs, startDate, endDate)
+
+			if startDate.Day() == 1 {
 				period = append(period, startDate.Format("Jan 2006"))
 			}
-		case "weekly":
-			dataGraph, _ = service.GetConsumptionWeekly(meterIDs, startDate, endDate)
-			period = append(period, startDate.Format("Jan 2")+" - "+startDate.AddDate(0, 0, 6).Format("Jan 2"))
 			for startDate.Before(endDate) {
-				startDate = startDate.AddDate(0, 0, 7)
-				period = append(period, startDate.Format("Jan 2")+" - "+startDate.AddDate(0, 0, 6).Format("Jan 2"))
+				startDate = startDate.AddDate(0, 1, 0)
+				if startDate.Day() == 1 && startDate.Before(endDate) {
+					period = append(period, startDate.Format("Jan 2006"))
+				}
+			}
+		case "weekly":
+			dataGraph, _ = service.GetConsumption(meterIDs, startDate, endDate)
+			for startDate.Before(endDate) {
+				weekEndDate := startDate.AddDate(0, 0, 6)
+				if weekEndDate.After(endDate) {
+					weekEndDate = endDate
+				}
+				period = append(period, startDate.Format("Jan 2")+" - "+weekEndDate.Format("Jan 2"))
+				startDate = weekEndDate.AddDate(0, 0, 1)
 			}
 		case "daily":
-			dataGraph, _ = service.GetConsumptionDaily(meterIDs, startDate, endDate)
+			dataGraph, _ = service.GetConsumption(meterIDs, startDate, endDate)
 			for i := 0; i < int(endDate.Sub(startDate).Hours()/24)+1; i++ {
 				period = append(period, startDate.AddDate(0, 0, i).Format("Jan 2"))
 			}

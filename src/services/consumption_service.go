@@ -7,9 +7,7 @@ import (
 )
 
 type ConsumptionService interface {
-	GetConsumptionMonthly(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
-	GetConsumptionDaily(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
-	GetConsumptionWeekly(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
+	GetConsumption(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
 	GetLastConsumption() ([]models.Consumption, error)
 }
 
@@ -21,19 +19,9 @@ func NewConsumptionService(repo repositories.ConsumptionRepository) *Consumption
 	return &ConsumptionServiceImpl{repo: repo}
 }
 
-func (c *ConsumptionServiceImpl) GetConsumptionMonthly(meterIDs []int, startDate, endDate time.Time) (
+func (c *ConsumptionServiceImpl) GetConsumption(meterIDs []int, startDate, endDate time.Time) (
 	[]models.Consumption, error) {
-	return c.repo.GetConsumptionMonthly(meterIDs, startDate, endDate)
-}
-
-func (c *ConsumptionServiceImpl) GetConsumptionDaily(meterIDs []int, startDate, endDate time.Time) (
-	[]models.Consumption, error) {
-	return c.repo.GetConsumptionDaily(meterIDs, startDate, endDate)
-}
-
-func (c *ConsumptionServiceImpl) GetConsumptionWeekly(meterIDs []int, startDate, endDate time.Time) (
-	[]models.Consumption, error) {
-	return c.repo.GetConsumptionWeekly(meterIDs, startDate, endDate)
+	return c.repo.GetConsumption(meterIDs, startDate, endDate)
 }
 
 func (c *ConsumptionServiceImpl) GetLastConsumption() ([]models.Consumption, error) {
