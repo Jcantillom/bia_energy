@@ -10,10 +10,9 @@ type ConsumptionGroup struct {
 	ActiveEnergy   []float64
 	ReactiveEnergy []float64
 	Solar          []float64
-	Date           []string
 }
 
-func GroupConsumptions(dataGraph []models.Consumption, kindPeriod string) map[string]*ConsumptionGroup {
+func GroupConsumptions(dataGraph []models.Consumption, kindPeriod string) []*ConsumptionGroup {
 	// Creamos una función para agrupar los datos por el tipo de período (monthly, weekly, daily)
 	groupFunc := func(consumption models.Consumption) string {
 		switch kindPeriod {
@@ -44,17 +43,21 @@ func GroupConsumptions(dataGraph []models.Consumption, kindPeriod string) map[st
 				ActiveEnergy:   []float64{consumption.ActiveEnergy},
 				ReactiveEnergy: []float64{consumption.ReactiveEnergy},
 				Solar:          []float64{consumption.Solar},
-				Date:           []string{consumption.Date.Format("2006-01-02")},
 			}
 		} else {
 			group.ActiveEnergy = append(group.ActiveEnergy, consumption.ActiveEnergy)
 			group.ReactiveEnergy = append(group.ReactiveEnergy, consumption.ReactiveEnergy)
 			group.Solar = append(group.Solar, consumption.Solar)
-			group.Date = append(group.Date, consumption.Date.Format("2006-01-02"))
 		}
 	}
 
-	return groupMap
+	// Convertir el mapa en una lista de objetos ConsumptionGroup
+	var result []*ConsumptionGroup
+	for _, group := range groupMap {
+		result = append(result, group)
+	}
+
+	return result
 }
 
 // GeneratePeriod genera el período según el tipo de período seleccionado.

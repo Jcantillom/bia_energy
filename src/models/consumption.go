@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Consumption struct {
 	ID                 string    `json:"id" gorm:"type:char(36);not null;primary_key;unique_index"`

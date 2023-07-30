@@ -6,13 +6,26 @@ import (
 )
 
 type MockConsumptionRepository struct {
-	GetConsumptionFunc     func(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
-	GetLastConsumptionFunc func() ([]models.Consumption, error)
+	GetMonthlyConsumptionFunc func(meterIDs []string, startDate, endDate time.Time) ([]models.Consumption, error)
+	GetWeeklyConsumptionFunc  func(meterIDs []string, startDate, endDate time.Time) ([]models.Consumption, error)
+	GetConsumptionDailyFunc   func(meterIDs []string, startDate, endDate time.Time) ([]models.Consumption, error)
+	GetLastConsumptionFunc    func() ([]models.Consumption, error)
 }
 
-func (m *MockConsumptionRepository) GetConsumption(meterIDs []int, startDate, endDate time.Time) (
+func (m *MockConsumptionRepository) GetMonthlyConsumption(
+	meterIDs []string, startDate, endDate time.Time) (
 	[]models.Consumption, error) {
-	return m.GetConsumptionFunc(meterIDs, startDate, endDate)
+	return m.GetMonthlyConsumptionFunc(meterIDs, startDate, endDate)
+}
+
+func (m *MockConsumptionRepository) GetConsumptionWeekly(meterIDs []string, startDate, endDate time.Time) (
+	[]models.Consumption, error) {
+	return m.GetWeeklyConsumptionFunc(meterIDs, startDate, endDate)
+}
+
+func (m *MockConsumptionRepository) GetConsumptionDaily(meterIDs []string, startDate, endDate time.Time) (
+	[]models.Consumption, error) {
+	return m.GetConsumptionDailyFunc(meterIDs, startDate, endDate)
 }
 
 func (m *MockConsumptionRepository) GetLastConsumption() ([]models.Consumption, error) {
@@ -20,13 +33,28 @@ func (m *MockConsumptionRepository) GetLastConsumption() ([]models.Consumption, 
 }
 
 type MockConsumptionService struct {
-	GetConsumptionFunc     func(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error)
+	GetConsumptionMonthlyFunc func(meterIDs []string, startDate, endDate time.Time) (
+		[]models.Consumption, error)
+	GetConsumptionWeeklyFunc func(meterIDs []string, startDate, endDate time.Time) (
+		[]models.Consumption, error)
+	GetConsumptionDailyFunc func(meterIDs []string, startDate, endDate time.Time) (
+		[]models.Consumption, error)
 	GetLastConsumptionFunc func() ([]models.Consumption, error)
 }
 
-func (m *MockConsumptionService) GetConsumption(meterIDs []int, startDate, endDate time.Time) (
+func (m *MockConsumptionService) GetConsumptionMonthly(meterIDs []string, startDate, endDate time.Time) (
 	[]models.Consumption, error) {
-	return m.GetConsumptionFunc(meterIDs, startDate, endDate)
+	return m.GetConsumptionMonthlyFunc(meterIDs, startDate, endDate)
+}
+
+func (m *MockConsumptionService) GetConsumptionWeekly(meterIDs []string, startDate, endDate time.Time) (
+	[]models.Consumption, error) {
+	return m.GetConsumptionWeeklyFunc(meterIDs, startDate, endDate)
+}
+
+func (m *MockConsumptionService) GetConsumptionDaily(meterIDs []string, startDate, endDate time.Time) (
+	[]models.Consumption, error) {
+	return m.GetConsumptionDailyFunc(meterIDs, startDate, endDate)
 }
 
 func (m *MockConsumptionService) GetLastConsumption() ([]models.Consumption, error) {

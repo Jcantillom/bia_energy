@@ -10,10 +10,10 @@ import (
 func TestGetConsumption(t *testing.T) {
 	// Crea una instancia del mock del repositorio
 	repoMock := &MockConsumptionRepository{
-		GetConsumptionFunc: func(meterIDs []int, startDate, endDate time.Time) ([]models.Consumption, error) {
+		GetWeeklyConsumptionFunc: func(meterIDs []string, startDate, endDate time.Time) ([]models.Consumption, error) {
 			return []models.Consumption{
-				{ID: "1", MeterID: 1, ActiveEnergy: 100, ReactiveEnergy: 50, Date: time.Now()},
-				{ID: "2", MeterID: 1, ActiveEnergy: 200, ReactiveEnergy: 100, Date: time.Now()},
+				{ID: "1", MeterID: "1", ActiveEnergy: 100, ReactiveEnergy: 50, Date: time.Now()},
+				{ID: "2", MeterID: "1", ActiveEnergy: 200, ReactiveEnergy: 100, Date: time.Now()},
 			}, nil
 		},
 	}
@@ -22,7 +22,7 @@ func TestGetConsumption(t *testing.T) {
 	service := services.NewConsumptionService(repoMock)
 
 	// Llama al método del servicio que se quiere probar
-	consumptions, err := service.GetConsumption([]int{1}, time.Now(), time.Now())
+	consumptions, err := service.GetConsumptionWeekly([]string{"1"}, time.Now(), time.Now())
 
 	// Verifica que no haya error
 	if err != nil {
@@ -40,8 +40,8 @@ func TestGetLastConsumption(t *testing.T) {
 	repoMock := &MockConsumptionRepository{
 		GetLastConsumptionFunc: func() ([]models.Consumption, error) {
 			return []models.Consumption{
-				{ID: "1", MeterID: 1, ActiveEnergy: 100, ReactiveEnergy: 50, Date: time.Now()},
-				{ID: "2", MeterID: 1, ActiveEnergy: 200, ReactiveEnergy: 100, Date: time.Now()},
+				{ID: "1", MeterID: "1", ActiveEnergy: 100, ReactiveEnergy: 50, Date: time.Now()},
+				{ID: "2", MeterID: "1", ActiveEnergy: 200, ReactiveEnergy: 100, Date: time.Now()},
 			}, nil
 		},
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/cantillo16/bia_energy/src/services"
 	"github.com/cantillo16/bia_energy/src/utils"
 	"net/http"
-	"sort"
 )
 
 type (
@@ -29,14 +28,26 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 		startDate, endDate, kindPeriod := utils.ParseRequestParams(r)
 		meterIDs := utils.ParseMeterIDs(r.URL.Query().Get("meters_ids"))
 
+		if startDate.After(endDate) {
+			http.Error(w, "La fecha inicial no puede ser mayor que la fecha final", http.StatusBadRequest)
+			return
+		}
+
 		var dataGraph []models.Consumption
 		var err error
 
 		switch kindPeriod {
 		case "monthly":
 			dataGraph, err = service.GetMonthlyConsumption(meterIDs, startDate, endDate)
+		case "daily":
+			dataGraph, err = service.GetDailyConsumption(meterIDs, startDate, endDate)
+		case "weekly":
+			dataGraph, err = service.GetConsumptionWeekly(meterIDs, startDate, endDate)
 		default:
-			dataGraph, err = service.GetConsumption(meterIDs, startDate, endDate)
+			http.Error(w, "El valor del campo 'kind_period' es inválido",
+				http.StatusBadRequest)
+			return
+
 		}
 
 		if err != nil {
@@ -51,11 +62,6 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 		for _, group := range groupMap {
 			dataGraphGroup = append(dataGraphGroup, *group)
 		}
-
-		// Ordenamos los datos por fecha antes de generar el período
-		sort.SliceStable(dataGraphGroup, func(i, j int) bool {
-			return dataGraphGroup[i].Date[0] < dataGraphGroup[j].Date[0]
-		})
 
 		// Realizar la suma de los acumulados en cada arreglo
 		utils.SumarAcomulados(dataGraphGroup)
