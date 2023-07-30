@@ -6,15 +6,17 @@ import (
 )
 
 type ConsumptionGroup struct {
-	MeterID        string
-	ActiveEnergy   []float64
-	ReactiveEnergy []float64
-	Solar          []float64
+	MeterID        string    `json:"MeterID"`
+	ActiveEnergy   []float64 `json:"ActiveEnergy"`
+	ReactiveEnergy []float64 `json:"ReactiveEnergy"`
+	Solar          []float64 `json:"Solar"`
 }
 
 func GroupConsumptions(dataGraph []models.Consumption, kindPeriod string) []*ConsumptionGroup {
-	// Creamos una función para agrupar los datos por el tipo de período (monthly, weekly, daily)
-	groupFunc := func(consumption models.Consumption) string {
+	groupMap := make(map[string]*ConsumptionGroup)
+
+	// Creamos una función para obtener la clave del grupo por el tipo de período (monthly, weekly, daily)
+	getGroupKey := func(consumption models.Consumption) string {
 		switch kindPeriod {
 		case "monthly":
 			return consumption.Date.Format("Jan 2006")
@@ -27,11 +29,9 @@ func GroupConsumptions(dataGraph []models.Consumption, kindPeriod string) []*Con
 		}
 	}
 
-	// Creamos un mapa para agrupar los datos
-	groupMap := make(map[string]*ConsumptionGroup)
-
+	// Agrupamos los datos y sumamos los valores por mes
 	for _, consumption := range dataGraph {
-		groupKey := groupFunc(consumption)
+		groupKey := getGroupKey(consumption)
 		if groupKey == "" {
 			continue
 		}

@@ -44,10 +44,8 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 		case "weekly":
 			dataGraph, err = service.GetConsumptionWeekly(meterIDs, startDate, endDate)
 		default:
-			http.Error(w, "El valor del campo 'kind_period' es inválido",
-				http.StatusBadRequest)
+			http.Error(w, "El valor del campo 'kind_period' es inválido", http.StatusBadRequest)
 			return
-
 		}
 
 		if err != nil {
@@ -55,26 +53,47 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 			return
 		}
 
-		groupMap := utils.GroupConsumptions(dataGraph, kindPeriod)
-
-		// Obtenemos la lista final de ConsumptionGroup y formateamos el período
-		var dataGraphGroup []utils.ConsumptionGroup
-		for _, group := range groupMap {
-			dataGraphGroup = append(dataGraphGroup, *group)
-		}
-
-		// Realizar la suma de los acumulados en cada arreglo
-		utils.SumarAcomulados(dataGraphGroup)
+		groups := utils.GroupConsumptions(dataGraph, kindPeriod)
 
 		// Generamos el período según el tipo de período seleccionado
 		period := utils.GeneratePeriod(kindPeriod, startDate, endDate)
 
+		// Agrupamos los valores por mes en los arreglos correspondientes
+		var dataGraphActiveEnergy []float64
+		var dataGraphReactiveEnergy []float64
+		var dataGraphSolar []float64
+
+		// Calcular el acumulado de los valores por mes y agregarlos a los arreglos
+		for _, group := range groups {
+			dataGraphActiveEnergy = append(dataGraphActiveEnergy, utils.SumarArreglo(group.ActiveEnergy))
+			dataGraphReactiveEnergy = append(dataGraphReactiveEnergy, utils.SumarArreglo(group.ReactiveEnergy))
+			dataGraphSolar = append(dataGraphSolar, utils.SumarArreglo(group.Solar))
+		}
+
+		// Construimos la respuesta JSON con la estructura deseada
 		response := struct {
-			Period    []string                 `json:"period"`
-			DataGraph []utils.ConsumptionGroup `json:"data_graph"`
+			Period    []string `json:"period"`
+			DataGraph []struct {
+				MeterID        string    `json:"MeterID"`
+				ActiveEnergy   []float64 `json:"ActiveEnergy"`
+				ReactiveEnergy []float64 `json:"ReactiveEnergy"`
+				Solar          []float64 `json:"Solar"`
+			} `json:"data_graph"`
 		}{
-			Period:    period,
-			DataGraph: dataGraphGroup,
+			Period: period,
+			DataGraph: []struct {
+				MeterID        string    `json:"MeterID"`
+				ActiveEnergy   []float64 `json:"ActiveEnergy"`
+				ReactiveEnergy []float64 `json:"ReactiveEnergy"`
+				Solar          []float64 `json:"Solar"`
+			}{
+				{
+					MeterID:        groups[0].MeterID,
+					ActiveEnergy:   dataGraphActiveEnergy,
+					ReactiveEnergy: dataGraphReactiveEnergy,
+					Solar:          dataGraphSolar,
+				},
+			},
 		}
 
 		w.Header().Set("Content-Type", "application/json")
