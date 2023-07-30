@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/cantillo16/bia_energy/src/models"
 	"github.com/cantillo16/bia_energy/src/services"
 	"github.com/cantillo16/bia_energy/src/utils"
@@ -28,7 +27,6 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		startDate, endDate, kindPeriod := utils.ParseRequestParams(r)
 		meterIDs := utils.ParseMeterIDs(r.URL.Query().Get("meters_ids"))
-		fmt.Println("Meters IDs: ", meterIDs)
 
 		var dataGraph []models.Consumption
 		var err error
@@ -51,14 +49,16 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 		dataGraphGroup := utils.GroupConsumptions(dataGraph, kindPeriod)
 		// Verificar si dataGraphGroup está vacío, lo que significa que no se encontraron consumos para los medidores especificados
 		if len(dataGraphGroup) == 0 {
-			http.Error(w, "No se encontraron consumos para los medidores especificados", http.StatusNotFound)
+			http.Error(w, "No se encontraron consumos para los medidores especificados",
+				http.StatusNotFound)
 			return
 		}
 		dataGraphActiveEnergy := utils.GetSumarizedData(dataGraphGroup, "ActiveEnergy")
 		dataGraphReactiveEnergy := utils.GetSumarizedData(dataGraphGroup, "ReactiveEnergy")
 		dataGraphSolar := utils.GetSumarizedData(dataGraphGroup, "Solar")
 
-		response := buildResponse(period, dataGraphGroup[0].MeterID, dataGraphActiveEnergy, dataGraphReactiveEnergy, dataGraphSolar)
+		response := buildResponse(period, meterIDs, dataGraphActiveEnergy,
+			dataGraphReactiveEnergy, dataGraphSolar)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
@@ -73,7 +73,33 @@ func getLastHandler(service services.ConsumptionService) Controller {
 	}
 }
 
-func buildResponse(period []string, meterID string, activeEnergy []float64, reactiveEnergy []float64, solar []float64) interface{} {
+func buildResponse(
+	period []string,
+	meterIDs []string,
+	activeEnergy []float64,
+	reactiveEnergy []float64,
+	solar []float64) interface{} {
+	dataGraphGroup := make([]struct {
+		MeterID        string    `json:"MeterID"`
+		ActiveEnergy   []float64 `json:"ActiveEnergy"`
+		ReactiveEnergy []float64 `json:"ReactiveEnergy"`
+		Solar          []float64 `json:"Solar"`
+	}, len(meterIDs))
+
+	for i, meterID := range meterIDs {
+		dataGraphGroup[i] = struct {
+			MeterID        string    `json:"MeterID"`
+			ActiveEnergy   []float64 `json:"ActiveEnergy"`
+			ReactiveEnergy []float64 `json:"ReactiveEnergy"`
+			Solar          []float64 `json:"Solar"`
+		}{
+			MeterID:        meterID,
+			ActiveEnergy:   activeEnergy,
+			ReactiveEnergy: reactiveEnergy,
+			Solar:          solar,
+		}
+	}
+
 	return struct {
 		Period    []string `json:"period"`
 		DataGraph []struct {
@@ -83,19 +109,7 @@ func buildResponse(period []string, meterID string, activeEnergy []float64, reac
 			Solar          []float64 `json:"Solar"`
 		} `json:"data_graph"`
 	}{
-		Period: period,
-		DataGraph: []struct {
-			MeterID        string    `json:"MeterID"`
-			ActiveEnergy   []float64 `json:"ActiveEnergy"`
-			ReactiveEnergy []float64 `json:"ReactiveEnergy"`
-			Solar          []float64 `json:"Solar"`
-		}{
-			{
-				MeterID:        meterID,
-				ActiveEnergy:   activeEnergy,
-				ReactiveEnergy: reactiveEnergy,
-				Solar:          solar,
-			},
-		},
+		Period:    period,
+		DataGraph: dataGraphGroup,
 	}
 }

@@ -21,6 +21,7 @@ func ParseRequestParams(r *http.Request) (time.Time, time.Time, string) {
 }
 
 func ParseMeterIDs(meterIDs string) []string {
+	meterIDs = strings.TrimSpace(meterIDs)
 	if meterIDs == "" {
 		return []string{}
 	}
