@@ -53,48 +53,13 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 			return
 		}
 
-		groups := utils.GroupConsumptions(dataGraph, kindPeriod)
-
-		// Generamos el período según el tipo de período seleccionado
 		period := utils.GeneratePeriod(kindPeriod, startDate, endDate)
+		dataGraphGroup := utils.GroupConsumptions(dataGraph, kindPeriod)
+		dataGraphActiveEnergy := utils.GetSumarizedData(dataGraphGroup, "ActiveEnergy")
+		dataGraphReactiveEnergy := utils.GetSumarizedData(dataGraphGroup, "ReactiveEnergy")
+		dataGraphSolar := utils.GetSumarizedData(dataGraphGroup, "Solar")
 
-		// Agrupamos los valores por mes en los arreglos correspondientes
-		var dataGraphActiveEnergy []float64
-		var dataGraphReactiveEnergy []float64
-		var dataGraphSolar []float64
-
-		// Calcular el acumulado de los valores por mes y agregarlos a los arreglos
-		for _, group := range groups {
-			dataGraphActiveEnergy = append(dataGraphActiveEnergy, utils.SumarArreglo(group.ActiveEnergy))
-			dataGraphReactiveEnergy = append(dataGraphReactiveEnergy, utils.SumarArreglo(group.ReactiveEnergy))
-			dataGraphSolar = append(dataGraphSolar, utils.SumarArreglo(group.Solar))
-		}
-
-		// Construimos la respuesta JSON con la estructura deseada
-		response := struct {
-			Period    []string `json:"period"`
-			DataGraph []struct {
-				MeterID        string    `json:"MeterID"`
-				ActiveEnergy   []float64 `json:"ActiveEnergy"`
-				ReactiveEnergy []float64 `json:"ReactiveEnergy"`
-				Solar          []float64 `json:"Solar"`
-			} `json:"data_graph"`
-		}{
-			Period: period,
-			DataGraph: []struct {
-				MeterID        string    `json:"MeterID"`
-				ActiveEnergy   []float64 `json:"ActiveEnergy"`
-				ReactiveEnergy []float64 `json:"ReactiveEnergy"`
-				Solar          []float64 `json:"Solar"`
-			}{
-				{
-					MeterID:        groups[0].MeterID,
-					ActiveEnergy:   dataGraphActiveEnergy,
-					ReactiveEnergy: dataGraphReactiveEnergy,
-					Solar:          dataGraphSolar,
-				},
-			},
-		}
+		response := buildResponse(period, dataGraphGroup[0].MeterID, dataGraphActiveEnergy, dataGraphReactiveEnergy, dataGraphSolar)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
@@ -106,5 +71,32 @@ func getLastHandler(service services.ConsumptionService) Controller {
 		lastConsumption, _ := service.GetLastConsumption()
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(lastConsumption)
+	}
+}
+
+func buildResponse(period []string, meterID string, activeEnergy []float64, reactiveEnergy []float64, solar []float64) interface{} {
+	return struct {
+		Period    []string `json:"period"`
+		DataGraph []struct {
+			MeterID        string    `json:"MeterID"`
+			ActiveEnergy   []float64 `json:"ActiveEnergy"`
+			ReactiveEnergy []float64 `json:"ReactiveEnergy"`
+			Solar          []float64 `json:"Solar"`
+		} `json:"data_graph"`
+	}{
+		Period: period,
+		DataGraph: []struct {
+			MeterID        string    `json:"MeterID"`
+			ActiveEnergy   []float64 `json:"ActiveEnergy"`
+			ReactiveEnergy []float64 `json:"ReactiveEnergy"`
+			Solar          []float64 `json:"Solar"`
+		}{
+			{
+				MeterID:        meterID,
+				ActiveEnergy:   activeEnergy,
+				ReactiveEnergy: reactiveEnergy,
+				Solar:          solar,
+			},
+		},
 	}
 }
