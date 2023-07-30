@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/cantillo16/bia_energy/src/models"
 	"github.com/cantillo16/bia_energy/src/services"
 	"github.com/cantillo16/bia_energy/src/utils"
@@ -27,11 +28,7 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		startDate, endDate, kindPeriod := utils.ParseRequestParams(r)
 		meterIDs := utils.ParseMeterIDs(r.URL.Query().Get("meters_ids"))
-
-		if startDate.After(endDate) {
-			http.Error(w, "La fecha inicial no puede ser mayor que la fecha final", http.StatusBadRequest)
-			return
-		}
+		fmt.Println("Meters IDs: ", meterIDs)
 
 		var dataGraph []models.Consumption
 		var err error
@@ -43,9 +40,6 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 			dataGraph, err = service.GetDailyConsumption(meterIDs, startDate, endDate)
 		case "weekly":
 			dataGraph, err = service.GetConsumptionWeekly(meterIDs, startDate, endDate)
-		default:
-			http.Error(w, "El valor del campo 'kind_period' es inválido", http.StatusBadRequest)
-			return
 		}
 
 		if err != nil {
@@ -55,6 +49,11 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 
 		period := utils.GeneratePeriod(kindPeriod, startDate, endDate)
 		dataGraphGroup := utils.GroupConsumptions(dataGraph, kindPeriod)
+		// Verificar si dataGraphGroup está vacío, lo que significa que no se encontraron consumos para los medidores especificados
+		if len(dataGraphGroup) == 0 {
+			http.Error(w, "No se encontraron consumos para los medidores especificados", http.StatusNotFound)
+			return
+		}
 		dataGraphActiveEnergy := utils.GetSumarizedData(dataGraphGroup, "ActiveEnergy")
 		dataGraphReactiveEnergy := utils.GetSumarizedData(dataGraphGroup, "ReactiveEnergy")
 		dataGraphSolar := utils.GetSumarizedData(dataGraphGroup, "Solar")

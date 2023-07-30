@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"fmt"
 	"github.com/cantillo16/bia_energy/src/models"
 	"github.com/cantillo16/bia_energy/src/utils"
 	"gorm.io/gorm"
@@ -52,6 +51,7 @@ func (c *ConsumptionRepositoryImpl) GetMonthlyConsumption(
 
 func (c *ConsumptionRepositoryImpl) GetConsumptionWeekly(
 	meterIDs []string, startDate, endDate time.Time) ([]models.Consumption, error) {
+
 	var consumptions []models.Consumption
 
 	startDate, endDate = utils.SetStartAndEndWeek(startDate, endDate)
@@ -60,14 +60,12 @@ func (c *ConsumptionRepositoryImpl) GetConsumptionWeekly(
 	startDateStr := startDate.UTC().Format("2006-01-02 15:04:05")
 	endDateStr := endDate.UTC().Format("2006-01-02 15:04:05")
 
-	fmt.Println("startDateStr: ", startDateStr)
-	fmt.Println("endDateStr: ", endDateStr)
-
 	err := c.db.Where("meter_id IN (?) AND date BETWEEN ? AND ?",
 		meterIDs, startDateStr, endDateStr).Find(&consumptions).Error
 	if err != nil {
 		return nil, err
 	}
+
 	return consumptions, nil
 }
 
@@ -80,9 +78,6 @@ func (c *ConsumptionRepositoryImpl) GetConsumptionDaily(
 	// Convertir las fechas a cadenas con formato de fecha y hora en UTC
 	startDateStr := startDate.UTC().Format("2006-01-02 15:04:05")
 	endDateStr := endDate.UTC().Format("2006-01-02 15:04:05")
-
-	fmt.Println("startDateStr: ", startDateStr)
-	fmt.Println("endDateStr: ", endDateStr)
 
 	err := c.db.Where("meter_id IN (?) AND date BETWEEN ? AND ?",
 		meterIDs, startDateStr, endDateStr).Find(&consumptions).Error
