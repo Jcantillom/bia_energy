@@ -4,7 +4,7 @@ import "time"
 
 type Consumption struct {
 	ID                 string    `json:"id" gorm:"type:char(36);not null;primary_key;unique_index"`
-	MeterID            int       `json:"meter_id" gorm:"type:int;not null;index"`
+	MeterID            string    `json:"meter_id" gorm:"type:char;not null;index"`
 	ActiveEnergy       float64   `json:"active_energy" gorm:"type:decimal(15,6);not null;index"`
 	ReactiveEnergy     float64   `json:"reactive_energy" gorm:"type:decimal(15,6);not null;index"`
 	CapacitiveReactive float64   `json:"capacitive_reactive" gorm:"type:decimal(15,6);not null;index"`

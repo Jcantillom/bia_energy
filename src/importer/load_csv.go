@@ -11,6 +11,9 @@ import (
 )
 
 func ImportCSVToDB(db *gorm.DB, filePath string) error {
+	fmt.Println("Cargando CSV a la base de datos, esto tomara 3 min y 22 Seg, " +
+		"espere el mensaje de coonfirmacion ...⏳ ")
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -19,6 +22,8 @@ func ImportCSVToDB(db *gorm.DB, filePath string) error {
 
 	// create a new reader
 	reader := csv.NewReader(file)
+
+	_, _ = reader.Read() // skip header
 
 	// read all records and load into db
 	for {
@@ -29,7 +34,7 @@ func ImportCSVToDB(db *gorm.DB, filePath string) error {
 
 		// parse record
 		id := record[0]
-		meterID, _ := strconv.Atoi(record[1])
+		meterID := record[1]
 		activeEnergy, _ := strconv.ParseFloat(record[2], 64)
 		reactiveEnergy, _ := strconv.ParseFloat(record[3], 64)
 		capacitiveReactive, _ := strconv.ParseFloat(record[4], 64)
@@ -38,12 +43,7 @@ func ImportCSVToDB(db *gorm.DB, filePath string) error {
 		date, err := parseDate(record[6])
 		if err != nil {
 			fmt.Println(err)
-			continue // Salta este registro y pasa al siguiente
-		}
-
-		if date.Equal(time.Time{}) {
-			fmt.Println("Fecha inválida:", record[6])
-			continue // Salta este registro y pasa al siguiente
+			continue
 		}
 
 		// create consumption
@@ -65,10 +65,20 @@ func ImportCSVToDB(db *gorm.DB, filePath string) error {
 			return err
 		}
 	}
-
+	fmt.Println("CSV cargado exitosamente a la base de datos ✅")
 	return nil
 }
 
 func parseDate(dateStr string) (time.Time, error) {
-	return time.Parse("2006-01-02 15:04:05-07", dateStr)
+	if dateStr == "date" {
+		return time.Time{}, nil
+	}
+
+	layout := "2006-01-02 15:04:05-07"
+	parsedDate, err := time.Parse(layout, dateStr)
+	if err != nil {
+		return time.Time{}, nil
+	}
+
+	return parsedDate, nil
 }

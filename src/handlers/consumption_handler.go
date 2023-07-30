@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/cantillo16/bia_energy/src/models"
 	"github.com/cantillo16/bia_energy/src/services"
+	"github.com/cantillo16/bia_energy/src/utils"
 	"net/http"
 	"sort"
-	"strconv"
-	"time"
 )
 
 type (
@@ -27,11 +27,27 @@ func NewHandler(service services.ConsumptionService) *Handler {
 
 func getConsumptionHandler(service services.ConsumptionService) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
-		meterIDs, startDate, endDate, kindPeriod := parseRequestParams(r)
+		startDate, endDate, kindPeriod := utils.ParseRequestParams(r)
+		meterIDs := utils.ParseMeterIDs(r.URL.Query().Get("meters_ids"))
+		fmt.Println("startDate: ", startDate)
+		fmt.Println("endDate: ", endDate)
 		var period []string
 		var dataGraphGroup []ConsumptionGroup
 
-		dataGraph, _ := service.GetConsumption(meterIDs, startDate, endDate)
+		var dataGraph []models.Consumption
+		var err error
+
+		switch kindPeriod {
+		case "monthly":
+			dataGraph, err = service.GetMonthlyConsumption(meterIDs, startDate, endDate)
+		default:
+			dataGraph, err = service.GetConsumption(meterIDs, startDate, endDate)
+		}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		// Creamos una función para agrupar los datos por el tipo de periodo (monthly, weekly, daily)
 		groupFunc := func(consumption models.Consumption) string {
@@ -132,37 +148,6 @@ func getConsumptionHandler(service services.ConsumptionService) Controller {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}
-}
-
-func parseRequestParams(r *http.Request) ([]int, time.Time, time.Time, string) {
-	queryParams := r.URL.Query()
-	meterIDs := parseMeterIDs(queryParams.Get("meters_ids"))
-	startDate := parseDate(queryParams.Get("start_date"))
-	endDate := parseDate(queryParams.Get("end_date"))
-	kindPeriod := queryParams.Get("kind_period")
-	return meterIDs, startDate, endDate, kindPeriod
-}
-
-func parseMeterIDs(meterIDs string) []int {
-	if meterIDs == "" {
-		return []int{}
-	}
-	var ids []int
-	id, err := strconv.Atoi(meterIDs)
-	if err != nil {
-		http.Error(nil, "El parámetro meters_ids no es válido", http.StatusBadRequest)
-		return []int{}
-	}
-	ids = append(ids, id)
-	return ids
-}
-
-func parseDate(date string) time.Time {
-	if date == "" {
-		return time.Time{}
-	}
-	parsedDate, _ := time.Parse("2006-01-02", date)
-	return parsedDate
 }
 
 func getLastHandler(service services.ConsumptionService) Controller {
