@@ -36,12 +36,12 @@ func main() {
 
 	fmt.Println("Server is running on", url+" ... 🚀")
 
-	//err := openBrowser(url)
-	//if err != nil {
-	//	fmt.Println("No se pudo abrir el navegador:", err)
-	//}
+	err := openBrowser(url)
+	if err != nil {
+		fmt.Println("No se pudo abrir el navegador:", err)
+	}
 
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		panic(err)
 	}
